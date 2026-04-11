@@ -254,12 +254,14 @@ response = client.chat.completions.create(
     messages=[{"role": "user", "content": prompt}]
 )
 
-output = response.choices[0].message.content
-st.write(output)
+try:
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}]
+    )
 
-                
-                
-            
+    output = response.choices[0].message.content
+    st.write(output)
 
-        except Exception as e:
-            st.error(f"Error: {e}")
+except Exception as e:
+    st.error(f"Error: {e}")
