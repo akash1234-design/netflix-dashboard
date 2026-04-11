@@ -14,11 +14,16 @@ if not api_key:
 else:
     genai.configure(api_key=api_key)
 
-    # Load model
-    model = genai.GenerativeModel("gemini-1.5-flash")
+   # Load model
+model = genai.GenerativeModel("gemini-1.5-flash")
 
+import pandas as pd
+
+# Load dataset
+df = pd.read_csv("netflix.csv")
+filtered_df = df
+# UI separator
 st.markdown("---")
-st.header("AI Features (Gemini)")
 # Tabs
 tab1, tab2, tab3 = st.tabs(["AI Insights", "Recommendations", "AI Chat"])
 
