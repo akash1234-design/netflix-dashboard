@@ -18,8 +18,7 @@ else:
     model = genai.GenerativeModel("gemini-1.5-flash")
 
 st.markdown("---")
-st.subheader("🤖 AI Features (Gemini)")
-
+st.header("AI Features (Gemini)")
 # Tabs
 tab1, tab2, tab3 = st.tabs(["AI Insights", "Recommendations", "AI Chat"])
 
