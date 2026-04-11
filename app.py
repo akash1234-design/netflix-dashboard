@@ -138,9 +138,9 @@ st.write(filtered_df["type"].value_counts())
 # ==============================
 # 🤖 AI FEATURES (PASTE AT END)
 # ==============================
-
-import openai
-openai.api_key = "YOUR_API_KEY"   # <-- apni API key daalo
+from openai import OpenAI
+import os
+ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY")) # <-- apni API key daalo
 
 
 st.markdown("---")
