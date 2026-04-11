@@ -168,12 +168,18 @@ with tab1:
             Give 5 key insights in simple words.
             """
 
-            response = openai.ChatCompletion.create(
+            from openai import OpenAI
+            import os
+
+            client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+            response = client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[{"role": "user", "content": prompt}]
             )
 
-            st.success(response['choices'][0]['message']['content'])
+            output = response.choices[0].message.content
+            st.success(output)
 
         except Exception as e:
             st.error(f"Error: {e}")
@@ -189,16 +195,21 @@ with tab2:
         try:
             prompt = f"Suggest 5 Netflix {genre} movies with short description."
 
-            response = openai.ChatCompletion.create(
+            from openai import OpenAI
+            import os
+
+            client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+            response = client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[{"role": "user", "content": prompt}]
             )
 
-            st.success(response['choices'][0]['message']['content'])
+            output = response.choices[0].message.content
+            st.success(output)
 
         except Exception as e:
             st.error(f"Error: {e}")
-
 
 # ==============================
 # 💬 AI CHATBOT
@@ -219,13 +230,35 @@ with tab3:
             Question: {user_q}
             """
 
-            response = openai.ChatCompletion.create(
+            from openai import OpenAI
+            import os
+
+            client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+            response = client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[{"role": "user", "content": prompt}]
             )
 
-            st.chat_message("assistant").write(
-                response['choices'][0]['message']['content']
+            output = response.choices[0].message.content
+            st.chat_message("assistant").write(output)
+
+        except Exception as e:
+            st.error(f"Error: {e}")
+import os
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+response = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": prompt}]
+)
+
+output = response.choices[0].message.content
+st.write(output)
+
+                
+                
             )
 
         except Exception as e:
