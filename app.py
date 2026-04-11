@@ -15,7 +15,7 @@ else:
     genai.configure(api_key=api_key)
 
    # Load model
-model = genai.GenerativeModel("gemini-1.5-flash-latest")
+model = genai.GenerativeModel("gemini-2.0-flash")
 
 import pandas as pd
 
