@@ -246,23 +246,23 @@ with tab3:
 
         except Exception as e:
             st.error(f"Error: {e}")
+from openai import OpenAI
 import os
 
+# Initialize client
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+# Make request
 response = client.chat.completions.create(
     model="gpt-4o-mini",
     messages=[{"role": "user", "content": prompt}]
 )
 
-try:
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}]
-    )
+# Get output
+output = response.choices[0].message.content
 
-    output = response.choices[0].message.content
-    st.write(output)
+# Show in Streamlit
+st.write(output)
 
 except Exception as e:
     st.error(f"Error: {e}")
