@@ -249,20 +249,27 @@ with tab3:
 from openai import OpenAI
 import os
 
-# Initialize client
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+try:
+    from openai import OpenAI
+    import os
 
-# Make request
-response = client.chat.completions.create(
-    model="gpt-4o-mini",
-    messages=[{"role": "user", "content": prompt}]
-)
+    # Initialize client
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# Get output
-output = response.choices[0].message.content
+    # Prompt (IMPORTANT: string hona chahiye)
+    prompt = "Analyze this Netflix data and give insights"
 
-# Show in Streamlit
-st.write(output)
+    # Make request
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    # Get output
+    output = response.choices[0].message.content
+
+    # Show in Streamlit
+    st.write(output)
 
 except Exception as e:
     st.error(f"Error: {e}")
