@@ -140,7 +140,8 @@ st.write(filtered_df["type"].value_counts())
 # ==============================
 from openai import OpenAI
 import os
-  client = OpenAI(api_key=os.getenv("OPENAI_API_KEY")) # <-- apni API key daalo
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
 st.markdown("---")
