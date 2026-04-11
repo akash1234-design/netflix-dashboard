@@ -1,15 +1,21 @@
 # ==============================
-# 🤖 AI FEATURES (GEMINI)
+# 🤖 AI FEATURES (GEMINI SETUP)
 # ==============================
 
 import google.generativeai as genai
 import os
 
-# Configure API key
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+# Load API key safely
+api_key = os.getenv("GEMINI_API_KEY")
 
-# Load model
-model = genai.GenerativeModel("gemini-pro")
+# Check if key exists
+if not api_key:
+    st.error("❌ GEMINI API KEY missing! Please add it in Streamlit Secrets.")
+else:
+    genai.configure(api_key=api_key)
+
+    # Load model
+    model = genai.GenerativeModel("gemini-1.5-flash")
 
 st.markdown("---")
 st.subheader("🤖 AI Features (Gemini)")
