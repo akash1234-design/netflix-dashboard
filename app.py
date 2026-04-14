@@ -31,7 +31,7 @@ with tab1:
 # 🎯 RECOMMENDATIONS
 # ==============================
 with tab2:
-    st.warning("⚠️ Recommendation feature is currently unavailable.")
+    
     st.info("Use filters in dashboard to find content manually.")
 
 
