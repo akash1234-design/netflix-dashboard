@@ -1,240 +1,231 @@
 # ==============================
-# 🤖 AI FEATURES - POWERED BY CLAUDE API
+# 🎯 SMART FEATURES - NO AI API NEEDED
+# Pure Python + Pandas powered!
 # ==============================
+
 import streamlit as st
 import pandas as pd
-import requests
-import json
+import plotly.express as px
+import plotly.graph_objects as go
 
 # ── Load dataset ──────────────────────────────────────────────────────────────
 @st.cache_data
 def load_data():
     df = pd.read_csv("netflix.csv")
+    if "date_added" in df.columns:
+        df["date_added"] = pd.to_datetime(df["date_added"], errors="coerce")
+        df["year_added"] = df["date_added"].dt.year
+        df["month_added"] = df["date_added"].dt.month
+    if "duration" in df.columns:
+        df["minutes"] = df["duration"].str.extract(r"(\d+)").astype(float)
     return df
 
 df = load_data()
-filtered_df = df  # Replace with your actual filtered_df if you have sidebar filters
-
-# ── Claude API helper ─────────────────────────────────────────────────────────
-CLAUDE_API_URL = "https://api.anthropic.com/v1/messages"
-CLAUDE_MODEL   = "claude-sonnet-4-20250514"
-
-def ask_claude(system_prompt: str, user_message: str, max_tokens: int = 1024) -> str:
-    """Send a message to Claude and return the text response."""
-    api_key = st.secrets.get("ANTHROPIC_API_KEY", "")
-    if not api_key:
-        return "❌ API key nahi mili. Streamlit secrets mein `ANTHROPIC_API_KEY` add karein."
-
-    headers = {
-        "x-api-key": api_key,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-    }
-    payload = {
-        "model": CLAUDE_MODEL,
-        "max_tokens": max_tokens,
-        "system": system_prompt,
-        "messages": [{"role": "user", "content": user_message}],
-    }
-    try:
-        resp = requests.post(CLAUDE_API_URL, headers=headers, json=payload, timeout=30)
-        resp.raise_for_status()
-        return resp.json()["content"][0]["text"]
-    except requests.exceptions.HTTPError as e:
-        return f"❌ API Error {resp.status_code}: {resp.text}"
-    except Exception as e:
-        return f"❌ Error: {str(e)}"
-
-
-# ── Dataset summary for context ────────────────────────────────────────────────
-def get_dataset_summary(data: pd.DataFrame) -> str:
-    """Create a short summary of the dataset to give Claude context."""
-    total       = len(data)
-    movies      = len(data[data["type"] == "Movie"]) if "type" in data.columns else "N/A"
-    shows       = len(data[data["type"] == "TV Show"]) if "type" in data.columns else "N/A"
-    top_genres  = (
-        data["listed_in"].str.split(", ").explode().value_counts().head(5).index.tolist()
-        if "listed_in" in data.columns else []
-    )
-    top_countries = (
-        data["country"].value_counts().head(5).index.tolist()
-        if "country" in data.columns else []
-    )
-    years = (
-        f"{int(data['release_year'].min())}–{int(data['release_year'].max())}"
-        if "release_year" in data.columns else "N/A"
-    )
-    return (
-        f"Netflix dataset: {total} titles ({movies} Movies, {shows} TV Shows). "
-        f"Release years: {years}. "
-        f"Top genres: {', '.join(top_genres)}. "
-        f"Top countries: {', '.join(top_countries)}."
-    )
-
 
 # ── UI ─────────────────────────────────────────────────────────────────────────
 st.markdown("---")
-st.header("🤖 AI Features")
+st.header("🎯 Smart Features")
 
-tab1, tab2, tab3 = st.tabs(["📊 AI Insights", "🎯 Recommendations", "💬 AI Chat"])
-
-dataset_summary = get_dataset_summary(filtered_df)
+tab1, tab2, tab3, tab4 = st.tabs([
+    "📊 Auto Insights",
+    "🎬 Recommendations",
+    "📈 Trends",
+    "🔍 Deep Search"
+])
 
 # ══════════════════════════════════════════════════════════════════════════════
-# TAB 1 — AI INSIGHTS
+# TAB 1 — AUTO INSIGHTS
 # ══════════════════════════════════════════════════════════════════════════════
 with tab1:
-    st.subheader("📊 AI-Powered Data Insights")
-    st.caption("Claude aapke Netflix dataset ko analyze karke insights dega.")
+    st.subheader("📊 Auto-Generated Insights")
+    st.caption("Dataset se automatically nikale gaye interesting facts!")
 
-    insight_topics = [
-        "Content trends aur release patterns",
-        "Genre popularity aur diversity",
-        "Country-wise content distribution",
-        "Rating distribution analysis",
-        "Content duration patterns",
-    ]
+    total  = len(df)
+    movies = len(df[df["type"] == "Movie"])  if "type" in df.columns else 0
+    shows  = len(df[df["type"] == "TV Show"]) if "type" in df.columns else 0
 
-    selected_topic = st.selectbox("🔍 Kis topic pe insight chahiye?", insight_topics)
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("🎬 Total Titles", f"{total:,}")
+    c2.metric("🎥 Movies",       f"{movies:,}")
+    c3.metric("📺 TV Shows",     f"{shows:,}")
+    c4.metric("📊 Movie %",      f"{round(movies/total*100) if total else 0}%")
 
-    if st.button("✨ Insight Generate Karo", key="insight_btn"):
-        with st.spinner("Claude analyze kar raha hai..."):
-            system = (
-                "Tum ek Netflix data analyst ho. User ke dataset ke baare mein "
-                "Hindi-English mix (Hinglish) mein clear aur interesting insights do. "
-                "Bullet points use karo. Max 250 words."
-            )
-            user_msg = (
-                f"Dataset info: {dataset_summary}\n\n"
-                f"Topic: {selected_topic}\n\n"
-                "Is topic pe 5 interesting insights do."
-            )
-            result = ask_claude(system, user_msg)
-        st.success("✅ Insight Ready!")
-        st.markdown(result)
+    st.markdown("---")
+    st.markdown("### 🔍 Smart Facts")
 
+    insights = []
+    if "listed_in" in df.columns:
+        top_genre = df["listed_in"].dropna().str.split(", ").explode().value_counts().idxmax()
+        top_count = df["listed_in"].dropna().str.split(", ").explode().value_counts().max()
+        insights.append(f"🏆 **Sabse popular genre:** {top_genre} ({top_count} titles)")
+    if "country" in df.columns:
+        tc = df["country"].dropna().value_counts()
+        insights.append(f"🌍 **Sabse zyada content:** {tc.idxmax()} ({tc.max()} titles)")
+    if "release_year" in df.columns:
+        insights.append(f"📅 **Sabse zyada releases:** {int(df['release_year'].value_counts().idxmax())} mein")
+    if "rating" in df.columns:
+        insights.append(f"🔞 **Sabse common rating:** {df['rating'].dropna().value_counts().idxmax()}")
+    if "minutes" in df.columns:
+        avg = df[df["type"]=="Movie"]["minutes"].mean()
+        if not pd.isna(avg):
+            insights.append(f"⏱️ **Average movie length:** {int(avg)} minutes")
+    if "release_year" in df.columns:
+        insights.append(f"🆕 **Newest:** {int(df['release_year'].max())} | 🕰️ **Oldest:** {int(df['release_year'].min())}")
+    if "year_added" in df.columns:
+        insights.append(f"📥 **Sabse zyada content add hua:** {int(df['year_added'].dropna().value_counts().idxmax())} mein")
+
+    for i in insights:
+        st.info(i)
+
+    st.markdown("### 🎭 Top 10 Genres")
+    if "listed_in" in df.columns:
+        gc = df["listed_in"].dropna().str.split(", ").explode().value_counts().head(10)
+        fig = px.bar(x=gc.values, y=gc.index, orientation="h",
+                     color=gc.values, color_continuous_scale="Reds",
+                     labels={"x": "Count", "y": "Genre"})
+        fig.update_layout(showlegend=False, coloraxis_showscale=False,
+                          plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+        st.plotly_chart(fig, use_container_width=True)
 
 # ══════════════════════════════════════════════════════════════════════════════
 # TAB 2 — RECOMMENDATIONS
 # ══════════════════════════════════════════════════════════════════════════════
 with tab2:
-    st.subheader("🎯 Personalized Recommendations")
-    st.caption("Apni pasand batao — Claude best Netflix content suggest karega.")
+    st.subheader("🎬 Smart Recommendations")
+    st.caption("Apni pasand batao — dataset se best matches nikalenge!")
 
     col1, col2 = st.columns(2)
-
     with col1:
-        fav_genre = st.selectbox(
-            "🎭 Favourite Genre",
-            ["Comedy", "Drama", "Thriller", "Horror", "Romance",
-             "Action", "Documentary", "Sci-Fi", "Animation", "Crime"],
-        )
-        content_type = st.radio("📺 Type", ["Movie", "TV Show", "Dono chalega"])
+        if "listed_in" in df.columns:
+            all_genres_list = sorted(df["listed_in"].dropna().str.split(", ").explode().unique().tolist())
+            fav_genre = st.selectbox("🎭 Genre", all_genres_list)
+        else:
+            fav_genre = None
+        content_type = st.radio("📺 Type", ["Movie", "TV Show", "Dono"])
 
     with col2:
-        mood = st.selectbox(
-            "😊 Aaj ka Mood",
-            ["Chill & Relax", "Adrenaline Rush", "Emotional Feel", 
-             "Kuch Sikhna Hai", "Hasna Chahta Hoon", "Mystery Solve Karo"],
-        )
-        duration_pref = st.radio("⏱️ Time Available", ["Short (< 90 min)", "Long (> 90 min)", "Koi bhi"])
+        if "rating" in df.columns:
+            ratings = ["Koi bhi"] + sorted(df["rating"].dropna().unique().tolist())
+            selected_rating = st.selectbox("🔞 Rating", ratings)
+        else:
+            selected_rating = "Koi bhi"
+        if "release_year" in df.columns:
+            min_yr = int(df["release_year"].min())
+            max_yr = int(df["release_year"].max())
+            year_range = st.slider("📅 Year Range", min_yr, max_yr, (2015, max_yr))
+        else:
+            year_range = None
 
-    if st.button("🎬 Recommendations Do!", key="rec_btn"):
-        with st.spinner("Claude best picks dhoondh raha hai..."):
+    num_results = st.slider("🔢 Kitne results?", 5, 20, 10)
 
-            # Build a small sample from the dataset for Claude to pick from
-            sample_cols = ["title", "type", "listed_in", "release_year", "rating", "duration"]
-            available_cols = [c for c in sample_cols if c in filtered_df.columns]
-            sample = filtered_df[available_cols].dropna().sample(min(80, len(filtered_df)), random_state=42)
-            sample_str = sample.to_string(index=False)
+    if st.button("🎯 Recommend Karo!", key="rec_btn"):
+        filtered = df.copy()
+        if fav_genre and "listed_in" in df.columns:
+            filtered = filtered[filtered["listed_in"].str.contains(fav_genre, na=False)]
+        if content_type != "Dono" and "type" in df.columns:
+            filtered = filtered[filtered["type"] == content_type]
+        if selected_rating != "Koi bhi" and "rating" in df.columns:
+            filtered = filtered[filtered["rating"] == selected_rating]
+        if year_range and "release_year" in df.columns:
+            filtered = filtered[(filtered["release_year"] >= year_range[0]) & (filtered["release_year"] <= year_range[1])]
 
-            system = (
-                "Tum ek Netflix recommendation expert ho. "
-                "User ki preferences ke basis pe dataset se REAL titles suggest karo. "
-                "Hinglish mein jawab do. Har recommendation ke liye title, type, aur 1-line reason batao."
-            )
-            user_msg = (
-                f"User preferences:\n"
-                f"- Genre: {fav_genre}\n"
-                f"- Type: {content_type}\n"
-                f"- Mood: {mood}\n"
-                f"- Duration: {duration_pref}\n\n"
-                f"Available Netflix titles (sample):\n{sample_str}\n\n"
-                "Top 5 recommendations do in titles se. Format: **Title** (Type) — Reason"
-            )
-            result = ask_claude(system, user_msg, max_tokens=800)
+        if len(filtered) == 0:
+            st.warning("⚠️ Koi match nahi mila! Filters thode loose karo.")
+        else:
+            sample = filtered.sample(min(num_results, len(filtered)))
+            st.success(f"✅ {len(filtered)} matches mile! Top {len(sample)} dikh rahe hain:")
+            show_cols = [c for c in ["title","type","listed_in","release_year","rating","duration","country"] if c in sample.columns]
+            st.dataframe(sample[show_cols].reset_index(drop=True), use_container_width=True, hide_index=True)
 
-        st.success("🎉 Recommendations Ready!")
-        st.markdown(result)
-
+        if st.button("🎲 Ek Random Pick!"):
+            pick = filtered.sample(1).iloc[0]
+            st.balloons()
+            st.markdown(f"### 🎉 Aaj dekho: **{pick.get('title','N/A')}**")
+            if "description" in pick:
+                st.caption(pick["description"])
 
 # ══════════════════════════════════════════════════════════════════════════════
-# TAB 3 — AI CHATBOT
+# TAB 3 — TRENDS
 # ══════════════════════════════════════════════════════════════════════════════
 with tab3:
-    st.subheader("💬 Netflix AI Chatbot")
-    st.caption("Netflix dataset ke baare mein kuch bhi poochho!")
+    st.subheader("📈 Netflix Content Trends")
 
-    # Initialize chat history
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = []
+    trend_option = st.selectbox("Kaunsa trend?", [
+        "Content Added Per Year",
+        "Movies vs TV Shows Over Years",
+        "Top 10 Countries",
+        "Rating Distribution",
+        "Top Directors",
+    ])
 
-    # Display chat history
-    for msg in st.session_state.chat_history:
-        with st.chat_message(msg["role"]):
-            st.markdown(msg["content"])
+    if trend_option == "Content Added Per Year" and "year_added" in df.columns:
+        data = df["year_added"].dropna().value_counts().sort_index()
+        fig = px.line(x=data.index, y=data.values, markers=True,
+                      labels={"x":"Year","y":"Titles Added"}, title="Content Added Per Year")
+        fig.update_traces(line_color="#E50914", line_width=3)
+        st.plotly_chart(fig, use_container_width=True)
 
-    # Chat input
-    user_input = st.chat_input("Netflix ke baare mein kuch bhi poochho...")
+    elif trend_option == "Movies vs TV Shows Over Years" and "release_year" in df.columns:
+        data = df.groupby(["release_year","type"]).size().reset_index(name="count")
+        fig = px.line(data, x="release_year", y="count", color="type", markers=True,
+                      title="Movies vs TV Shows Over Years",
+                      color_discrete_map={"Movie":"#E50914","TV Show":"#564d4d"})
+        st.plotly_chart(fig, use_container_width=True)
 
-    if user_input:
-        # Show user message
-        st.session_state.chat_history.append({"role": "user", "content": user_input})
-        with st.chat_message("user"):
-            st.markdown(user_input)
+    elif trend_option == "Top 10 Countries" and "country" in df.columns:
+        data = df["country"].dropna().value_counts().head(10)
+        fig = px.bar(x=data.index, y=data.values, labels={"x":"Country","y":"Titles"},
+                     title="Top 10 Countries", color=data.values, color_continuous_scale="Reds")
+        fig.update_layout(coloraxis_showscale=False)
+        st.plotly_chart(fig, use_container_width=True)
 
-        # Build conversation history for Claude
-        messages_for_api = []
-        for msg in st.session_state.chat_history:
-            messages_for_api.append({"role": msg["role"], "content": msg["content"]})
+    elif trend_option == "Rating Distribution" and "rating" in df.columns:
+        data = df["rating"].dropna().value_counts()
+        fig = px.pie(values=data.values, names=data.index, title="Rating Distribution",
+                     color_discrete_sequence=px.colors.sequential.Reds_r)
+        st.plotly_chart(fig, use_container_width=True)
 
-        # Get Claude response
-        with st.chat_message("assistant"):
-            with st.spinner("Soch raha hoon..."):
-                api_key = st.secrets.get("ANTHROPIC_API_KEY", "")
-                if not api_key:
-                    response_text = "❌ API key nahi mili. Streamlit secrets mein `ANTHROPIC_API_KEY` add karein."
-                else:
-                    headers = {
-                        "x-api-key": api_key,
-                        "anthropic-version": "2023-06-01",
-                        "content-type": "application/json",
-                    }
-                    system_prompt = (
-                        f"Tum ek helpful Netflix data assistant ho. "
-                        f"Is dataset ke baare mein jaante ho: {dataset_summary}. "
-                        "Hinglish mein friendly jawab do. "
-                        "Agar koi cheez dataset mein nahi hai toh honestly bolo."
-                    )
-                    payload = {
-                        "model": CLAUDE_MODEL,
-                        "max_tokens": 512,
-                        "system": system_prompt,
-                        "messages": messages_for_api,
-                    }
-                    try:
-                        resp = requests.post(CLAUDE_API_URL, headers=headers, json=payload, timeout=30)
-                        resp.raise_for_status()
-                        response_text = resp.json()["content"][0]["text"]
-                    except Exception as e:
-                        response_text = f"❌ Error: {str(e)}"
+    elif trend_option == "Top Directors" and "director" in df.columns:
+        data = df["director"].dropna().value_counts().head(10)
+        fig = px.bar(x=data.values, y=data.index, orientation="h",
+                     labels={"x":"Titles","y":"Director"}, title="Top 10 Directors",
+                     color=data.values, color_continuous_scale="Reds")
+        fig.update_layout(coloraxis_showscale=False)
+        st.plotly_chart(fig, use_container_width=True)
 
-            st.markdown(response_text)
+    else:
+        st.info("Yeh column dataset mein nahi hai.")
 
-        st.session_state.chat_history.append({"role": "assistant", "content": response_text})
+# ══════════════════════════════════════════════════════════════════════════════
+# TAB 4 — DEEP SEARCH
+# ══════════════════════════════════════════════════════════════════════════════
+with tab4:
+    st.subheader("🔍 Deep Search")
+    st.caption("Title, director, actor — kuch bhi search karo!")
 
-    # Clear chat button
-    if st.session_state.chat_history:
-        if st.button("🗑️ Chat Clear Karo"):
-            st.session_state.chat_history = []
-            st.rerun()
+    search_query = st.text_input("🔎 Kuch bhi type karo...", placeholder="e.g. Shah Rukh, Comedy, 2020...")
+    search_in = st.multiselect(
+        "Kahan search karein?",
+        options=[c for c in ["title","director","cast","listed_in","description","country"] if c in df.columns],
+        default=[c for c in ["title","director","cast"] if c in df.columns]
+    )
+
+    if search_query and search_in:
+        mask = pd.Series([False] * len(df))
+        for col in search_in:
+            mask |= df[col].astype(str).str.contains(search_query, case=False, na=False)
+        results = df[mask]
+        st.success(f"✅ **{len(results)} results** mile '{search_query}' ke liye!")
+        show_cols = [c for c in ["title","type","director","cast","release_year","rating","listed_in"] if c in results.columns]
+        st.dataframe(results[show_cols].reset_index(drop=True), use_container_width=True, hide_index=True)
+
+        if len(results) > 0 and "listed_in" in results.columns:
+            st.markdown("#### 🎭 In results mein genres:")
+            gd = results["listed_in"].dropna().str.split(", ").explode().value_counts().head(8)
+            fig = px.bar(x=gd.index, y=gd.values, color=gd.values,
+                         color_continuous_scale="Reds", labels={"x":"Genre","y":"Count"})
+            fig.update_layout(coloraxis_showscale=False,
+                              plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+            st.plotly_chart(fig, use_container_width=True)
+    elif search_query:
+        st.warning("Kam se kam ek column select karo.")
