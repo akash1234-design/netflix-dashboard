@@ -3,7 +3,7 @@
 Interactive Streamlit dashboard to explore & analyze Netflix's movie and TV show catalog. Discover trends, genres, and hidden insights from 8800+ titles.
 
 ### 🚀 Live Demo
-**[Click Here to Launch Dashboard](https://netflix-dashboard-obanuvni8dfhxkruwtatj2.streamlit.app/)** ← apna link daal dena
+**[Click Here to Launch Dashboard](https://netflix-dashboard-obanuvni8dfhxkruwtatj2.streamlit.app/)**
 
 ### 📸 Dashboard Preview
 ![Netflix Dashboard](netflix-dashboard.png)
